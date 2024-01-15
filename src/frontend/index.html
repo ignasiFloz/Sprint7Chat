@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Chat</title>
+    <script type="module">
+        import {io} from 'https://cdn.socket.io/4.3.2/socket.io.esm.min.js'
+        const socket = io()
+       
+        const buttonLogin = document.getElementById('login')
+        const userLogin = document.getElementById('logger')
+        const username = document.getElementById('username')
+        const room = document.getElementById('room')
+        const form = document.getElementById('form')
+        const input = document.getElementById('input')
+        const messages = document.getElementById('messages')
+        const box = document.getElementById('cuadrado')
+        let user ;
+        let roomNumber 
+
+        form.addEventListener('submit',(e)=>{
+            e.preventDefault()
+            if(input.value) {
+                const message = {
+                    text : input.value,
+                    user : user,
+                    room : roomNumber
+                }
+                socket.emit('chat message',JSON.stringify(message))
+            }
+        }) 
+        socket.on('chat message', (msg)=>{
+            if(!msg.user){
+                input.value = ''
+                return window.alert('please login before you start chatting')
+            }
+            const li = document.createElement('li');
+            li.textContent = `${msg.user}: ${msg.text}`;
+            messages.appendChild(li);
+            input.value = ''
+            messages.scrollTop = messages.scrollHeight;
+        })
+        buttonLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (username.value == '' || room.value == '') {
+                window.alert('Please fill all the data before entering the chat');
+                return;
+            }
+            if (!validRoom(room.value)) {
+                window.alert('Please choose a chat room between 1 and 10');
+                return;
+            }
+            roomNumber = room.value.toString();
+            box.insertAdjacentHTML('beforeend', roomNumber)
+            socket.emit('join room', roomNumber);
+            socket.on('room messages', (messagesList)=>{
+                messagesList.forEach((msg)=>{
+                    const li = document.createElement('li');
+                    li.textContent = `${msg.user}: ${msg.text}`;
+                    messages.appendChild(li);
+                })
+            })
+            user = username.value;
+            userLogin.style.display = 'none';
+        });
+        function validRoom(a){
+            if(!(a>0 && a<=10)){
+                return false
+            }
+            return true
+        }
+    </script>
+    <style>
+        *,
+        *::before,
+        *::after{
+            box-sizing: border-box;
+            
+        }
+        :root{
+            color-scheme: dark;
+        }
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            display: grid;
+            place-content: center;
+            height: 100vh;
+            padding: 36px;
+            grid-template-rows: 1fr;
+        }
+        #chat{
+            border: 1px solid #ffffff;
+            background-color: rgb(61, 61, 61);
+            border-radius: 4px;
+            overflow: hidden;
+            width: 350px;
+            height: 100%;
+            position: relative;
+        }
+        #messages {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            max-height: 90%; /* Ajusta la altura máxima según tus necesidades */
+            overflow-y: auto; /* Habilita el desbordamiento vertical con barra de desplazamiento */
+        }
+        #messages > li {
+            padding: .5rem 1rem;
+            
+        }
+        #messages > li:nth-child(odd){
+            background: #ffffff65;
+            
+        }
+        #form {
+            bottom: 0;
+            display: flex;
+            height: 48px;
+            left: 0;
+            padding: 4px;
+            position: absolute;
+            right: 0;
+        }
+        #input {
+            border-radius: 9999px;
+            border: 1px solif #000000;
+            flex: 1;
+            margin: 4px;
+            padding : 0 8px;
+        }
+        #input:focus{
+            outline: 0;
+        }
+        #form > button{
+            background: rgb(180, 194, 221);
+            color: #000000;
+            border:0;
+            margin: 4px;
+            border-radius: 4px;
+        }
+        #form>button:hover{
+            background: rgb(21, 139, 168)
+        }
+        #useregister{
+            background: rgba(168, 211, 240, 0.486);
+            width: 300px;
+            height: 90px;
+            border-radius: 10px;
+            
+        }
+        #useregister>button{
+            background: rgb(83, 126, 189);
+            border-radius: 9999px;
+            border: 1px solif #eee;
+            flex: 1;
+            margin: 4px;
+            padding : 0 8px;
+        }
+        #inputLogin{
+            margin-left: 13%;
+            margin-top: 10%;
+            border-radius: 10px;
+        }
+        #inputLogin::placeholder{
+            text-align: center;
+        }
+        #room{
+           width: 40px;
+        }
+        #username{
+            width: 160px;
+        }
+        #cuadrado {
+            width: 40px;
+            height: 40px;
+            background-color:  rgb(128, 128, 128);
+            color:rgba(255, 255, 255, 0.829);
+            text-align: center;
+            line-height: 40px;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px;
+            margin-right: 35%;
+            margin-top: 4%;
+            border-radius: 10%;
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+        
+
+        #current-room-text {
+
+            position: absolute;
+            top: 0;
+            right: 50px; /* Ajusta la posición del texto según tus necesidades */
+            color: #ffffff; /* Color del texto */
+            font-size: 14px; /* Tamaño de fuente del texto */
+            margin: 20px;
+            margin-right: 32.3%;
+            margin-top: 3%;
+        }
+
+    </style>
+</head>
+<body>
+    <section id="chat">
+        <ul id="messages"></ul>
+        <form id = "form">
+            <input type="text" name="message" id= "input" placeholder="Type a message" autocomplete="off"/>
+            <button type="submit">Send</button>
+        </form>
+    </section> 
+    <div id="logger">
+        <form id="login-form">
+            <label for="username">User:</label>
+            <input type="text" id="username" name="username" required>
+            <label for="roomnumber">Room:</label>
+            <input type="number" id="room" name="room" >
+            <button type="submit" id = "login">Log in</button>
+        </form>
+    </div>
+    <div id="cuadrado-container">
+        <div id="current-room-text">Room:</div>
+        <div id="cuadrado"></div>
+    </div>
+</body>
+</html>
